@@ -1,0 +1,71 @@
+Instalar los requerimentos con pip install -r requirements.txt
+
+MODULOS: 
+
+El modulo de ver todos los votantes del sistema se encuentra en el router llamado Total_votantes
+
+El modulo de ver los votantes por cada lider se encuentra en el router de lideres, en un campo llamado cantidad_votantes, que se actualiza cada minuto por si
+se encuentra un nuevo votante creado por ese lider
+
+El modulo de ver los votantes por cada municipio se encuentra en el router de municipios, en un campo llamado cantidad_votantes, que se actualiza cada minuto por si
+se encuentra un nuevo votante perteneciente a ese municipio
+
+El modulo de ver los votantes por cada puesto de votacion se encuentra en el router de puestos_votacion, en un campo llamado cantidad_votantes, que se 
+actualiza cada minuto por si se encuentra un nuevo votante perteneciente a ese puesto de votacion
+
+
+IMPORTANTE:
+Para crear objetos desde la api se crea con JSON, no con la interfaz HTML
+
+ESQUELETOS PARA CREAR OBJETOS: 
+
+Esqueleto para crear un Lider:
+
+En DOC lider se pone el documento que tiene el lider, el username que va a tener en el sistema y la contraseña que va a tener
+Tiene que ser necesariamente este esqueleto para que se cree el lider, solo rellenar la información
+
+
+{
+    "nombres_lider": "",
+    "apellidos_lider": "",
+    "direccion_lider": "",
+    "ciudad_lider": "",
+    "foto_lider": null,
+    "email_lider": "",
+    "doc_lider": {
+           "doc": "",
+           "username": "",
+           "password": ""
+    }
+}
+
+Esqueleto para crear un municipio
+
+{
+    "nombre_municipio": "",
+    "departamento_municipio": (ID DEL DEPARTAMENTO QUE SE QUIERE AGREGAR)
+}
+
+
+Esqueleto para crear un puesto de votacion
+
+{
+    "nombre_puesto_votacion": "",
+    "direccion_puesto_votacion": "",
+    "municipio_puesto_votacion": (ID DEL MUNICIPIO QUE SE QUIERE AGREGAR)
+}
+
+
+
+
+
+Modulos para terminar:
+
+Servicio de login
+
+-	Exponer un servicio que permita obtener la cantidad total de votantes inscritos por líder. LISTO!!!
+-	Exponer un servicio que permita obtener la cantidad total de votantes, en el sistema. LISTO!!!
+-	Exponer un servicio que permita obtener la cantidad total de votantes inscritos por municipio. LISTO!!!!
+-	Exponer un servicio que permita obtener la cantidad total de votantes inscritos por mesa de votación. LISTO!!!!
+Los usuarios con rol Líder, únicamente pueden ver la información que ellos mismos registran 
+Los admin pueden ver toda la información

@@ -1,11 +1,14 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import viewsets
-from GlobalApi.models import Municipios, Departamentos
-from GlobalApi.serializers.general_serializers import MunicipiosSerializer, DepartamentosSerializer
+from GlobalApi.models import Municipios, Departamentos, Votantes
+from GlobalApi.serializers.general_serializers import MunicipiosSerializer, DepartamentosSerializer, MunicipiosListSerializer
+from apscheduler.schedulers.background import BackgroundScheduler
+
+scheduler = BackgroundScheduler({'apscheduler.job_defaults.max_instances': 1})
 
 class MunicipiosViewSet(viewsets.ModelViewSet):
-    serializer_class = MunicipiosSerializer
+    serializer_class = MunicipiosListSerializer
 
     def get_queryset(self, pk=None):
         if pk == None:
@@ -60,3 +63,19 @@ class DepartamentosViewSet(viewsets.ModelViewSet):
         departamento.delete()
         return Response({'message':'Departamento eliminado correctamente'}, status= status.HTTP_200_OK)
         
+
+    
+    #Validacion para actualizar el campo cantidad de votantes que tiene cada municipio
+    @scheduler.scheduled_job('interval', seconds=60)
+    def validacion_votantes_municipio():
+        municipios = Municipios.objects.all()
+        for municipio in municipios:
+            votantes = Votantes.objects.filter(municipio_votante = municipio.id_municipio)
+            cant_votantes = votantes.count()
+            if cant_votantes == municipio.cantidad_votantes:
+                pass
+            else:
+                municipio.cantidad_votantes = cant_votantes
+                municipio.save()
+
+    scheduler.start()
