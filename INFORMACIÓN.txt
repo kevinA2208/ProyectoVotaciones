@@ -1,5 +1,10 @@
 Instalar los requerimentos con pip install -r requirements.txt
 
+Descargar el archivo MYSQLVotaciones.rar e importar la base de datos, si no funciona, simplemente crear una base de datos en MYSQL que se llame "votacionesdb"
+y ejecutar el comando "python manage.py migrate" para crear las tablas en la base de datos
+
+Descargar el archivo de Postman e importarlo en postman para poder hacer las pruebas de la api, si tiene dudas o fallos contactarme.
+
 MODULOS: 
 
 El modulo de ver todos los votantes del sistema se encuentra en el router llamado Total_votantes
@@ -74,6 +79,3 @@ Esqueleto para crear un departamento:
 
 
 
-            else:
-                votantes_lider = Votantes.objects.filter(doc_lider = doc_user_active)
-                return votantes_lider
