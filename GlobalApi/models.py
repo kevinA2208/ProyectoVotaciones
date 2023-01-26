@@ -11,6 +11,7 @@ class UserManager(BaseUserManager):
             username = username,
         )
 
+        print("ENTRAAAA A CREAR EL USUARIOOO SIII VAMOS!!!!!!!!!")
         user.set_password(password)
         user.save()
         return user
@@ -29,7 +30,8 @@ class User(AbstractBaseUser):
     doc = models.CharField('Numero de documento', unique=True, max_length=20, primary_key=True)
     username = models.CharField('Nombre de usuario', max_length=50, blank=True, null=True)
     is_staff = models.BooleanField(default=False)
-    
+    is_active = models.BooleanField(default=True)
+
     objects = UserManager()
     USERNAME_FIELD = 'doc'
     REQUIRED_FIELDS = ['username']
@@ -46,15 +48,16 @@ class User(AbstractBaseUser):
 
 
 class Lider(models.Model):
-    id_lider = models.AutoField(primary_key=True)
-    doc_lider = models.ForeignKey('User', on_delete=models.CASCADE, db_column='doc' )
+    id_lider = models.AutoField(primary_key=True, editable=False)
+    doc_lider = models.ForeignKey('User', on_delete=models.CASCADE, db_column='doc')
     nombres_lider = models.CharField(max_length = 50)
     apellidos_lider = models.CharField(max_length = 100)
     direccion_lider = models.CharField(max_length = 100)
     ciudad_lider = models.CharField(max_length = 50)
     foto_lider = models.ImageField(upload_to='lideres', null=True, blank=True)
     email_lider = models.EmailField(null = False)
-    cantidad_votantes = models.IntegerField(default=0)
+    cantidad_votantes = models.IntegerField(default=0, editable = False)
+    
 
 
 class Votantes(models.Model):
@@ -66,24 +69,24 @@ class Votantes(models.Model):
     municipio_votante = models.ForeignKey('Municipios', on_delete=models.CASCADE, db_column='id_municipio')
     puesto_votacion = models.ForeignKey('PuestoVotacion', on_delete=models.CASCADE, db_column='id_puesto_votacion')
     lider_id = models.ForeignKey('Lider', on_delete=models.CASCADE, db_column='id_lider')
-    
+
 
 class PuestoVotacion(models.Model):
-    id_puesto_votacion = models.AutoField(primary_key=True)
+    id_puesto_votacion = models.AutoField(primary_key=True, editable=False)
     nombre_puesto_votacion = models.CharField(max_length = 50)
     direccion_puesto_votacion = models.CharField(max_length = 100)
     municipio_puesto_votacion = models.ForeignKey('Municipios', on_delete=models.CASCADE, db_column='id_municipio')
-    cantidad_votantes = models.IntegerField(default=0)
+    cantidad_votantes = models.IntegerField(default=0, editable = False)
     
     
 class Municipios(models.Model):
-    id_municipio = models.AutoField(primary_key=True)
+    id_municipio = models.AutoField(primary_key=True, editable=False)
     nombre_municipio = models.CharField(max_length = 50)
     departamento_municipio = models.ForeignKey('Departamentos', on_delete=models.CASCADE, db_column='id_departamento')
-    cantidad_votantes = models.IntegerField(default=0)
+    cantidad_votantes = models.IntegerField(default=0, editable = False)
     
 
 class Departamentos(models.Model):
-    id_departamento = models.AutoField(primary_key=True)
+    id_departamento = models.AutoField(primary_key=True, editable=False)
     nombre_departamento = models.CharField(max_length = 50)
     

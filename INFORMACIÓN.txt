@@ -15,7 +15,7 @@ actualiza cada minuto por si se encuentra un nuevo votante perteneciente a ese p
 
 
 IMPORTANTE:
-Para crear objetos desde la api se crea con JSON, no con la interfaz HTML
+Para crear objetos desde la api se crea con JSON
 
 ESQUELETOS PARA CREAR OBJETOS: 
 
@@ -55,17 +55,25 @@ Esqueleto para crear un puesto de votacion
     "municipio_puesto_votacion": (ID DEL MUNICIPIO QUE SE QUIERE AGREGAR)
 }
 
+Esqueleto para crear un votante:
+
+{
+    "doc_votante": "",
+    "nombres_votante": "",
+    "apellidos_votante": "",
+    "direccion_votante": "",
+    "municipio_votante": (ID DEL MUNICIPIO),
+    "puesto_votacion": (ID DEL PUESTO DE VOTACION),
+    "lider_id": (ID DEL LIDER)
+}
+
+Esqueleto para crear un departamento:
+{
+    "nombre_departamento": ""
+}
 
 
 
-
-Modulos para terminar:
-
-Servicio de login
-
--	Exponer un servicio que permita obtener la cantidad total de votantes inscritos por líder. LISTO!!!
--	Exponer un servicio que permita obtener la cantidad total de votantes, en el sistema. LISTO!!!
--	Exponer un servicio que permita obtener la cantidad total de votantes inscritos por municipio. LISTO!!!!
--	Exponer un servicio que permita obtener la cantidad total de votantes inscritos por mesa de votación. LISTO!!!!
-Los usuarios con rol Líder, únicamente pueden ver la información que ellos mismos registran 
-Los admin pueden ver toda la información
+            else:
+                votantes_lider = Votantes.objects.filter(doc_lider = doc_user_active)
+                return votantes_lider

@@ -5,9 +5,13 @@ from GlobalApi.models import Lider, User, Votantes
 from GlobalApi.serializers.general_serializers import LiderSerializer, UsuarioSerializer, LiderListSerializer
 from datetime import timedelta, date
 from apscheduler.schedulers.background import BackgroundScheduler
+from GlobalApi.authentication.authentication_mixins import Authentication
 
 scheduler = BackgroundScheduler({'apscheduler.job_defaults.max_instances': 1})
 
+#El viewset de los usuarios solo conecta los usuarios lideres con la autenticación, al momento de crear un lider, se crea el usuario
+#y con los datos del usuario se hace el proceso de autenticacion, que viene conectado con un lider
+#el super user no pasa por esto, ya que se crea por consola
 class UsuariosViewSet(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
     
@@ -45,74 +49,119 @@ class UsuariosViewSet(viewsets.ModelViewSet):
         usuario.delete()
         return Response({'message':'Usuario eliminado correctamente'}, status= status.HTTP_200_OK)
 
-
-class LiderViewSet(viewsets.ModelViewSet):
+#Viewset para gestionar un lider, con validaciones, si se crea un lider, se crea el usuario del lider, este usuario no es staff
+class LiderViewSet(Authentication, viewsets.ModelViewSet):
     serializer_class = LiderSerializer
-
 
     def get_queryset(self, pk=None):
         if pk == None:
-            return LiderListSerializer.Meta.model.objects.all()
-        return Lider.objects.filter(id_lider = pk).first()
+            #Validacion para que los usuarios lideres no tengan acceso a la base de datos de lideres ni la puedan modificar
+            user_active = self.user
+            doc_user_active = user_active.doc
+            user = User.objects.filter(doc = doc_user_active).first()
+            if user.is_staff:
+                return LiderListSerializer.Meta.model.objects.all()
+            else:
+                pass
+          
 
     def create(self, request):
-        usuario_serializer = UsuarioSerializer(data=request.data['doc_lider'])
+        #Validacion para que los usuarios lideres no tengan acceso a la base de datos de lideres ni la puedan modificar
+        user_active = self.user
+        doc_user_active = user_active.doc
+        user = User.objects.filter(doc = doc_user_active).first()
+        if user.is_staff:
+            usuario_serializer = UsuarioSerializer(data=request.data['doc_lider'])
 
-        data_lider = request.data
+            data_lider = request.data
 
-        data_usuario = request.data['doc_lider']
+            data_usuario = request.data['doc_lider']
 
+            #Validación si existe un usuario con ese documento
+            if usuario_serializer.is_valid():
+                user_doc_validated = usuario_serializer.validated_data['doc']
+                user_existente = User.objects.filter(doc = user_doc_validated).first()
+                if user_existente:
+                    pass
+                else:
+                    usuario_serializer.save()
+                    
 
-        data_lider['doc_lider'] = data_usuario['doc']
+            data_lider['doc_lider'] = data_usuario['doc']
 
-        lider_serializer = LiderSerializer(data=data_lider)
+            lider_serializer = LiderSerializer(data=data_lider)
 
-        if usuario_serializer.is_valid():
-            usuario_serializer.save()
-            print("Usuario creado correctamente")
-
-        if lider_serializer.is_valid():
-            lider_serializer.save()
-            return Response({'data' : lider_serializer.data, 'message':'Se ha creado el Lider correctamente'}, status= status.HTTP_201_CREATED)
+            #Validacion para que los lideres no tengan el mismo documento
+            if lider_serializer.is_valid():
+                user_lider_documento = lider_serializer.validated_data['doc_lider']
+                user_doc = user_lider_documento.doc
+                lider_existente = Lider.objects.filter(doc_lider = user_doc).first()
+                if lider_existente:
+                    return Response({'message':'Ya existe un lider con el documento ' + user_doc}, status= status.HTTP_400_BAD_REQUEST)
+                else:
+                    lider_serializer.save()
+                    return Response({'data' : lider_serializer.data, 'message':'Se ha creado el Lider correctamente'}, status= status.HTTP_201_CREATED)
+        else:
+            return Response({"message":"El usuario no tiene permisos para crear lideres"},status=status.HTTP_401_UNAUTHORIZED)
         return Response(lider_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk):
-        lider = Lider.objects.filter(id_lider = pk).first()
+        user_active = self.user
+        doc_user_active = user_active.doc
+        user = User.objects.filter(doc = doc_user_active).first()
+        if user.is_staff:
+            lider = Lider.objects.filter(id_lider = pk).first()
 
-        data_lider = request.data
-        
-        data_usuario = request.data['doc_lider']
+            primer_documento = lider.doc_lider.doc
+            print(primer_documento)
+            request.data['doc_lider'] = primer_documento
 
-        doc_usuario = data_usuario
+            data_lider = request.data
+            
+            data_usuario = request.data['doc_lider']
 
-        usuario = User.objects.filter(doc = doc_usuario).first()
+            doc_usuario = data_usuario
 
-        data_lider['doc_lider'] = doc_usuario
+            usuario = User.objects.filter(doc = doc_usuario).first()
 
-        usuario_serializer = UsuarioSerializer(usuario, data=data_usuario, partial = True)
+            data_lider['doc_lider'] = doc_usuario
 
-        lider_serializer = LiderSerializer(lider, data=data_lider)
 
-        if usuario_serializer.is_valid():
-            usuario_serializer.save()
-            print("Usuario actualizado correctamente")
 
-        if lider_serializer.is_valid():
-            lider_serializer.save()
-            return Response({'data' : lider_serializer.data, 'message':'Se ha actualizado el Lider correctamente'}, status= status.HTTP_201_CREATED)
+
+
+            usuario_serializer = UsuarioSerializer(usuario, data=data_usuario, partial = True)
+
+            lider_serializer = LiderSerializer(lider, data=data_lider)
+            
+
+            if usuario_serializer.is_valid():
+                usuario_serializer.save()
+            
+
+            if lider_serializer.is_valid():
+                lider_serializer.save()
+                return Response({'data' : lider_serializer.data, 'message':'Se ha actualizado el Lider correctamente'}, status= status.HTTP_201_CREATED)
+        else:
+            return Response({"message":"El usuario no tiene permisos para actualizar lideres"},status=status.HTTP_401_UNAUTHORIZED)
         return Response(lider_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk):
-        
-        lider = Lider.objects.filter(id_lider = pk).first()
-        
-        doc_lider = lider.doc_lider.doc
-        usuario = User.objects.filter(doc = doc_lider).first()
+        user_active = self.user
+        doc_user_active = user_active.doc
+        user = User.objects.filter(doc = doc_user_active).first()
+        if user.is_staff:
+            lider = Lider.objects.filter(id_lider = pk).first()
+            
+            doc_lider = lider.doc_lider.doc
+            usuario = User.objects.filter(doc = doc_lider).first()
 
-        usuario.delete()
-        print("Usuario eliminado correctamente")
-        lider.delete()
-        return Response({'message':'Lider eliminado correctamente'}, status= status.HTTP_200_OK)
+            usuario.delete()
+            
+            lider.delete()
+            return Response({'message':'Lider eliminado correctamente'}, status= status.HTTP_200_OK)
+        else:
+            return Response({"message":"El usuario no tiene permisos para actualizar lideres"},status=status.HTTP_401_UNAUTHORIZED)
 
 
     #Validacion para actualizar el campo cantidad de votantes que tiene cada lider

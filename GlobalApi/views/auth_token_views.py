@@ -7,9 +7,19 @@ from django.contrib.sessions.models import Session
 from datetime import datetime
 from rest_framework.views import APIView
 
+#Esta clase devuelve el token del usuario que tenga asociado a la base de datos, si el usuario ingresado no tiene token muestra error
+class UserToken(APIView):
+    def get(self, request, *args, **kwargs):
+        username = request.GET.get('username')
+        try:
+            user_token = Token.objects.get(user = UserTokenSerializer().Meta.model.objects.filter(doc=username).first())
+            return Response({'token': user_token.key})
+        except:
+            return Response({'error':"Credenciales enviadas incorrectas"}, status= status.HTTP_400_BAD_REQUEST)
+
+
+
 class Login(ObtainAuthToken):
-
-
     def post(self, request, *args, **kwargs):
         login_serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
@@ -27,13 +37,7 @@ class Login(ObtainAuthToken):
                     'message': "Inicio de sesión exitoso"
                 }, status = status.HTTP_201_CREATED)
             else:
-                all_sessions = Session.objects.filter(expire_date__gte=datetime.now())
-                if all_sessions.exists():
-                    for session in all_sessions:
-                        session_data = session.get_decoded()
-                        if user.id == session_data.get('_auth_user_id'):
-                            session.delete()
-                    
+                #Si el token ya existe, lo elimina y lo crea de nuevo   
                 token.delete()
                 token = Token.objects.create(user = user)
                 return Response({
@@ -53,17 +57,8 @@ class Logout(APIView):
             token = request.GET.get('token')
             token = Token.objects.filter(key = token).first()
             if token:
-                user = token.user
-
-                all_sessions = Session.objects.filter(expire_date__gte=datetime.now())
-                if all_sessions.exists():
-                    for session in all_sessions:
-                        session_data = session.get_decoded()
-                        if user.id == session_data.get('_auth_user_id'):
-                            session.delete()
-
                 token.delete()
-                return Response({'message': 'Sesiones y token eliminados correctamente'}, status= status.HTTP_200_OK)
+                return Response({'message': 'token eliminado correctamente'}, status= status.HTTP_200_OK)
             return Response({'error': 'No se ha encontrado un usuario con estas credenciales'}, status= status.HTTP_400_BAD_REQUEST)
 
         except:

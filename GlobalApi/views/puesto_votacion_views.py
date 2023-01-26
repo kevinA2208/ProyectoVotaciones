@@ -1,41 +1,66 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import viewsets
-from GlobalApi.models import PuestoVotacion, Votantes
+from GlobalApi.models import PuestoVotacion, Votantes, User
 from GlobalApi.serializers.general_serializers import PuestoVotacionSerializer, PuestoVotacionListSerializer
 from apscheduler.schedulers.background import BackgroundScheduler
+from GlobalApi.authentication.authentication_mixins import Authentication
+
 
 scheduler = BackgroundScheduler({'apscheduler.job_defaults.max_instances': 1})
 
 
 
-class PuestoVotacionViewSet(viewsets.ModelViewSet):
-    serializer_class = PuestoVotacionListSerializer
+class PuestoVotacionViewSet(Authentication, viewsets.ModelViewSet):
+    serializer_class = PuestoVotacionSerializer
 
     def get_queryset(self, pk=None):
         if pk == None:
-            return PuestoVotacionSerializer.Meta.model.objects.all()
-        return PuestoVotacion.objects.filter(id_puesto_votacion = pk).first()
+            user_active = self.user
+            doc_user_active = user_active.doc
+            user = User.objects.filter(doc = doc_user_active).first()
+            if user.is_staff:
+                return PuestoVotacionSerializer.Meta.model.objects.all()
+            else:
+                pass
 
     def create(self, request):
-        serializer = PuestoVotacionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'data' : serializer.data, 'message':'Se ha creado el Puesto de Votacion correctamente'}, status= status.HTTP_201_CREATED)
+        user_active = self.user
+        doc_user_active = user_active.doc
+        user = User.objects.filter(doc = doc_user_active).first()
+        if user.is_staff:
+            serializer = PuestoVotacionSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'data' : serializer.data, 'message':'Se ha creado el Puesto de Votacion correctamente'}, status= status.HTTP_201_CREATED)
+        else:
+            return Response({"message":"El usuario no tiene permisos para crear puestos de votación"},status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk):
-        puesto_votacion = PuestoVotacion.objects.filter(id_puesto_votacion = pk).first()
-        serializer = PuestoVotacionSerializer(puesto_votacion, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'data' : serializer.data, 'message':'Se ha actualizado el Puesto de Votacion correctamente'}, status= status.HTTP_201_CREATED)
+        user_active = self.user
+        doc_user_active = user_active.doc
+        user = User.objects.filter(doc = doc_user_active).first()
+        if user.is_staff:
+            puesto_votacion = PuestoVotacion.objects.filter(id_puesto_votacion = pk).first()
+            serializer = PuestoVotacionSerializer(puesto_votacion, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'data' : serializer.data, 'message':'Se ha actualizado el Puesto de Votacion correctamente'}, status= status.HTTP_201_CREATED)
+        else:
+            return Response({"message":"El usuario no tiene permisos para actualizar puestos de votación"},status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk):
-        puesto_votacion = PuestoVotacion.objects.filter(id_puesto_votacion = pk).first()
-        puesto_votacion.delete()
-        return Response({'message':'Puesto de Votacion eliminado correctamente'}, status= status.HTTP_200_OK)
+        user_active = self.user
+        doc_user_active = user_active.doc
+        user = User.objects.filter(doc = doc_user_active).first()
+        if user.is_staff:
+            puesto_votacion = PuestoVotacion.objects.filter(id_puesto_votacion = pk).first()
+            puesto_votacion.delete()
+            return Response({'message':'Puesto de Votacion eliminado correctamente'}, status= status.HTTP_200_OK)
+        else:
+            return Response({"message":"El usuario no tiene permisos para eliminar puestos de votación"},status=status.HTTP_401_UNAUTHORIZED)
 
 
     #Validacion para actualizar el campo cantidad de votantes que tiene cada puesto de votacion
